@@ -202,6 +202,38 @@
         font-size: 1.2rem;
       }
 
+      .simple-result {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+        border: 2px solid #667eea;
+        text-align: left;
+      }
+
+      .result-icon {
+        font-size: 2.5rem;
+        margin-right: 20px;
+      }
+
+      .result-text {
+        flex: 1;
+      }
+
+      .result-object {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      .result-confidence {
+        font-size: 1rem;
+        color: #667eea;
+        font-weight: 500;
+      }
+
       .prediction {
         display: flex;
         justify-content: space-between;
@@ -299,7 +331,7 @@
         </div>
 
         <div id="results" class="results hidden">
-          <h3>🎯 Predictions</h3>
+          <h3>🔍 What I see:</h3>
           <div id="predictions"></div>
         </div>
       </div>
@@ -350,14 +382,16 @@
           try {
             this.updateStatus("Loading AI model... Please wait", "loading");
 
-            // Load MobileNet model from the correct TensorFlow.js model URL
-            this.model = await tf.loadLayersModel(
-              "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json"
-            );
+            // Load the MobileNet model using the pre-built package
+            await this.loadMobileNetScript();
+            this.model = await window.mobilenet.load({
+              version: 2,
+              alpha: 1.0,
+            });
 
             this.isModelLoaded = true;
             this.updateStatus(
-              "AI model loaded successfully! Ready to classify images.",
+              "AI model loaded successfully! Ready to identify objects.",
               "success"
             );
 
@@ -367,34 +401,10 @@
             }, 3000);
           } catch (error) {
             console.error("Error loading model:", error);
-            // Try alternative model loading approach
-            try {
-              this.updateStatus(
-                "Trying alternative model... Please wait",
-                "loading"
-              );
-
-              // Load MobileNet using the @tensorflow-models package approach
-              // First we need to load the script
-              await this.loadMobileNetScript();
-              this.model = await window.mobilenet.load();
-
-              this.isModelLoaded = true;
-              this.updateStatus(
-                "AI model loaded successfully! Ready to classify images.",
-                "success"
-              );
-
-              setTimeout(() => {
-                this.status.classList.add("hidden");
-              }, 3000);
-            } catch (secondError) {
-              console.error("Second attempt failed:", secondError);
-              this.updateStatus(
-                "Failed to load AI model. Please check your internet connection and refresh.",
-                "error"
-              );
-            }
+            this.updateStatus(
+              "Failed to load AI model. Please check your internet connection and refresh.",
+              "error"
+            );
           }
         }
 
@@ -407,7 +417,7 @@
 
             const script = document.createElement("script");
             script.src =
-              "https://cdnjs.cloudflare.com/ajax/libs/tensorflow-models/1.0.0/mobilenet.min.js";
+              "https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js";
             script.onload = resolve;
             script.onerror = reject;
             document.head.appendChild(script);
@@ -519,33 +529,15 @@
           try {
             this.updateStatus("Analyzing image...", "loading");
 
-            // Check if we're using the mobilenet package or raw model
-            let predictions;
+            // Get predictions from MobileNet
+            const predictions = await this.model.classify(imageElement);
 
-            if (window.mobilenet && this.model.classify) {
-              // Using @tensorflow-models/mobilenet
-              predictions = await this.model.classify(imageElement);
-              this.displayMobileNetResults(predictions);
-            } else {
-              // Using raw TensorFlow.js model
-              const tensor = tf.browser
-                .fromPixels(imageElement)
-                .resizeNearestNeighbor([224, 224])
-                .toFloat()
-                .div(255.0)
-                .expandDims();
+            // Get the top prediction and clean up the name
+            const topPrediction = predictions[0];
+            const cleanName = this.cleanClassName(topPrediction.className);
+            const confidence = Math.round(topPrediction.probability * 100);
 
-              const rawPredictions = await this.model.predict(tensor).data();
-              const topPredictions = await this.getTopPredictions(
-                rawPredictions,
-                5
-              );
-              this.displayResults(topPredictions);
-
-              // Clean up tensor
-              tensor.dispose();
-            }
-
+            this.displaySimpleResult(cleanName, confidence);
             this.status.classList.add("hidden");
           } catch (error) {
             console.error("Error analyzing image:", error);
@@ -556,28 +548,56 @@
           }
         }
 
-        displayMobileNetResults(predictions) {
+        cleanClassName(className) {
+          // Remove technical suffixes and clean up the name
+          let cleaned = className
+            .split(",")[0] // Take first part if comma-separated
+            .replace(/^\d+\s*/, "") // Remove leading numbers
+            .replace(/[_-]/g, " ") // Replace underscores/hyphens with spaces
+            .toLowerCase()
+            .split(" ")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+
+          // Handle some common patterns
+          const replacements = {
+            "Egyptian Cat": "Cat",
+            "Tabby Cat": "Cat",
+            "Tiger Cat": "Cat",
+            "Persian Cat": "Cat",
+            "Siamese Cat": "Cat",
+            "Cellular Telephone": "Phone",
+            "Mobile Phone": "Phone",
+            "Notebook Computer": "Laptop",
+            "Desktop Computer": "Computer",
+            "Coffee Mug": "Coffee Cup",
+            "Wine Bottle": "Bottle",
+            "Beer Bottle": "Bottle",
+            "Water Bottle": "Bottle",
+            "Tennis Ball": "Ball",
+            "Soccer Ball": "Ball",
+            Basketball: "Ball",
+          };
+
+          return replacements[cleaned] || cleaned;
+        }
+
+        displaySimpleResult(objectName, confidence) {
           this.predictions.innerHTML = "";
 
-          predictions.slice(0, 5).forEach((pred) => {
-            const confidence = (pred.probability * 100).toFixed(1);
+          // Create a simple, clean result display
+          const resultElement = document.createElement("div");
+          resultElement.className = "simple-result";
 
-            const predictionElement = document.createElement("div");
-            predictionElement.className = "prediction";
+          resultElement.innerHTML = `
+                    <div class="result-icon">🎯</div>
+                    <div class="result-text">
+                        <div class="result-object">${objectName}</div>
+                        <div class="result-confidence">${confidence}% confident</div>
+                    </div>
+                `;
 
-            predictionElement.innerHTML = `
-                        <div>
-                            <div class="prediction-label">${pred.className}</div>
-                            <div class="confidence-bar">
-                                <div class="confidence-fill" style="width: ${confidence}%"></div>
-                            </div>
-                        </div>
-                        <div class="prediction-confidence">${confidence}%</div>
-                    `;
-
-            this.predictions.appendChild(predictionElement);
-          });
-
+          this.predictions.appendChild(resultElement);
           this.results.classList.remove("hidden");
         }
 
