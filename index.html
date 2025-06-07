@@ -351,11 +351,13 @@
             mobilenet: null,
             cocossd: null,
             facemesh: null,
+            customModel: null,
           };
           this.modelsLoaded = {
             mobilenet: false,
             cocossd: false,
             facemesh: false,
+            customModel: false,
           };
           this.stream = null;
           this.setupElements();
@@ -418,6 +420,10 @@
               window.faceLandmarksDetection.SupportedPackages.mediapipeFacemesh
             );
             this.modelsLoaded.facemesh = true;
+
+            this.updateStatus("Loading custom model...", "loading");
+            this.models.customModel = await tf.loadGraphModel('YOUR_CUSTOM_MODEL_URL/model.json');
+            this.modelsLoaded.customModel = true;
 
             this.updateStatus("Loading classification model...", "loading");
 
@@ -672,7 +678,41 @@
               console.log("Object detection failed:", objectError);
             }
 
-            // 3. Fallback to MobileNet if no good detections
+            // 3. Try Custom Model
+            try {
+              console.log("Running custom model...");
+              const imageTensor = tf.browser.fromPixels(imageElement);
+              // Placeholder for potential resizing/normalization - this is VERY model-dependent
+              // const resizedTensor = tf.image.resizeBilinear(imageTensor, [YOUR_MODEL_EXPECTED_HEIGHT, YOUR_MODEL_EXPECTED_WIDTH]);
+              // const normalizedTensor = resizedTensor.div(255.0).expandDims(0); // Example normalization
+
+              // For now, assume the model can take imageTensor directly or a simple form:
+              const customModelPredictions = await this.models.customModel.predict(imageTensor);
+              // Or, if it's a graph model with a specific signature:
+              // const modelOutput = await this.models.customModel.executeAsync({'input_tensor_name': imageTensor});
+
+              // Simplified placeholder for subtask:
+              if (customModelPredictions && customModelPredictions.length > 0) {
+                  // This assumes customModelPredictions = [{class: 'className', score: 0.9}, ...]
+                  const topPrediction = customModelPredictions[0];
+                  const confidence = Math.round(topPrediction.score * 100);
+                  if (confidence > 40) {
+                      results.push({
+                          type: "custom",
+                          object: "Custom: " + topPrediction.class,
+                          confidence: confidence,
+                          icon: "🐾",
+                          info: "Detected by custom model"
+                      });
+                      console.log("Custom model added a result:", results[results.length-1]);
+                  }
+              }
+              tf.dispose([imageTensor /*, resizedTensor, normalizedTensor */]); // Clean up tensors
+            } catch (customError) {
+              console.log("Custom model inference failed:", customError);
+            }
+
+            // 4. Fallback to MobileNet if no good detections
             if (results.length === 0) {
               try {
                 const classifications = await this.models.mobilenet.classify(
