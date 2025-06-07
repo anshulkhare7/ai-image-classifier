@@ -259,50 +259,16 @@
       .hidden {
         display: none !important;
       }
-
-      .info-box {
-        background: #fff3cd;
-        color: #856404;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #ffeaa7;
-      }
-
-      .feature-list {
-        list-style: none;
-        padding: 0;
-      }
-
-      .feature-list li {
-        padding: 8px 0;
-        border-bottom: 1px solid #eee;
-      }
-
-      .feature-list li:last-child {
-        border-bottom: none;
-      }
-
-      .feature-name {
-        font-weight: 600;
-        color: #667eea;
-      }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
         <h1>🤖 AI Image Classifier</h1>
-        <p>Analyze images using computer vision</p>
+        <p>Identify objects using your camera or photos</p>
       </div>
 
       <div class="main-content">
-        <div class="info-box">
-          <strong>🔧 Offline Image Analysis</strong><br />
-          This app works completely offline using built-in computer vision
-          algorithms. No external dependencies required!
-        </div>
-
         <div class="camera-section">
           <div class="camera-container">
             <video id="videoElement" autoplay playsinline></video>
@@ -310,7 +276,7 @@
             <div id="placeholder" class="placeholder">
               <div class="placeholder-icon">📷</div>
               <p>
-                Take a photo or select from gallery<br />to analyze the image
+                Take a photo or select from gallery<br />to identify objects
               </p>
             </div>
           </div>
@@ -327,22 +293,27 @@
 
         <input type="file" id="fileInput" class="file-input" accept="image/*" />
 
-        <div id="status" class="status success">
-          ✅ Ready to analyze images! No internet connection required.
+        <div id="status" class="status loading">
+          <div class="spinner"></div>
+          Loading AI model... Please wait
         </div>
 
         <div id="results" class="results hidden">
-          <h3>🔍 Image Analysis</h3>
+          <h3>🎯 Predictions</h3>
           <div id="predictions"></div>
         </div>
       </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.14.0/tf.min.js"></script>
     <script>
       class ImageClassifier {
         constructor() {
+          this.model = null;
+          this.isModelLoaded = false;
+          this.stream = null;
           this.setupElements();
-          this.initializeAnalyzer();
+          this.initializeModel();
         }
 
         setupElements() {
@@ -375,11 +346,35 @@
           );
         }
 
-        initializeAnalyzer() {
-          // Hide status after 3 seconds since we're ready immediately
-          setTimeout(() => {
-            this.status.classList.add("hidden");
-          }, 3000);
+        async initializeModel() {
+          try {
+            this.updateStatus("Loading AI model... Please wait", "loading");
+
+            // Load MobileNet model
+            this.model = await tf.loadLayersModel(
+              "https://tfhub.dev/google/tfjs-model/imagenet/mobilenet_v2_100_224/classification/3/default/1",
+              {
+                fromTFHub: true,
+              }
+            );
+
+            this.isModelLoaded = true;
+            this.updateStatus(
+              "AI model loaded successfully! Ready to classify images.",
+              "success"
+            );
+
+            // Hide status after 3 seconds
+            setTimeout(() => {
+              this.status.classList.add("hidden");
+            }, 3000);
+          } catch (error) {
+            console.error("Error loading model:", error);
+            this.updateStatus(
+              "Failed to load AI model. Please refresh the page.",
+              "error"
+            );
+          }
         }
 
         updateStatus(message, type) {
@@ -397,7 +392,7 @@
 
             const constraints = {
               video: {
-                facingMode: "environment",
+                facingMode: "environment", // Use back camera on mobile
                 width: { ideal: 1280 },
                 height: { ideal: 720 },
               },
@@ -454,6 +449,7 @@
         async captureAndAnalyze() {
           if (!this.videoElement.srcObject) return;
 
+          // Create canvas to capture frame
           const canvas = document.createElement("canvas");
           const context = canvas.getContext("2d");
 
@@ -462,6 +458,7 @@
 
           context.drawImage(this.videoElement, 0, 0);
 
+          // Convert to image
           const imageData = canvas.toDataURL("image/jpeg");
           this.imagePreview.src = imageData;
 
@@ -474,26 +471,36 @@
         }
 
         async analyzeImage(imageElement) {
+          if (!this.isModelLoaded) {
+            this.updateStatus(
+              "AI model not loaded yet. Please wait...",
+              "error"
+            );
+            return;
+          }
+
           try {
-            this.updateStatus("Analyzing image features...", "loading");
+            this.updateStatus("Analyzing image...", "loading");
 
-            // Create canvas for image analysis
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
+            // Preprocess image
+            const tensor = tf.browser
+              .fromPixels(imageElement)
+              .resizeNearestNeighbor([224, 224])
+              .toFloat()
+              .div(255.0)
+              .expandDims();
 
-            // Set canvas size
-            canvas.width = 224;
-            canvas.height = 224;
+            // Make prediction
+            const predictions = await this.model.predict(tensor).data();
 
-            // Draw and analyze image
-            ctx.drawImage(imageElement, 0, 0, 224, 224);
-            const imageData = ctx.getImageData(0, 0, 224, 224);
+            // Get top 5 predictions with ImageNet labels
+            const topPredictions = await this.getTopPredictions(predictions, 5);
 
-            // Perform analysis
-            const analysis = this.performImageAnalysis(imageData);
-
-            this.displayResults(analysis);
+            this.displayResults(topPredictions);
             this.status.classList.add("hidden");
+
+            // Clean up tensor
+            tensor.dispose();
           } catch (error) {
             console.error("Error analyzing image:", error);
             this.updateStatus(
@@ -503,260 +510,70 @@
           }
         }
 
-        performImageAnalysis(imageData) {
-          const data = imageData.data;
-          const width = imageData.width;
-          const height = imageData.height;
+        async getTopPredictions(predictions, topK) {
+          // Convert predictions to array with indices
+          const predArray = Array.from(predictions).map((prob, index) => ({
+            probability: prob,
+            classIndex: index,
+          }));
 
-          // Extract features
-          const features = this.extractImageFeatures(data, width, height);
+          // Sort by probability and get top K
+          const topPreds = predArray
+            .sort((a, b) => b.probability - a.probability)
+            .slice(0, topK);
 
-          // Generate predictions based on features
-          return this.generatePredictions(features);
+          // Map to class names (simplified ImageNet classes)
+          return topPreds.map((pred) => ({
+            className: this.getClassName(pred.classIndex),
+            probability: pred.probability,
+          }));
         }
 
-        extractImageFeatures(data, width, height) {
-          let totalR = 0,
-            totalG = 0,
-            totalB = 0;
-          let brightness = 0;
-          let edges = 0;
-          let colorVariance = 0;
-          let textureComplexity = 0;
-
-          const pixelCount = width * height;
-
-          // Analyze color distribution and basic features
-          for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-
-            totalR += r;
-            totalG += g;
-            totalB += b;
-
-            brightness += (r + g + b) / 3;
-          }
-
-          // Calculate averages
-          const avgR = totalR / pixelCount;
-          const avgG = totalG / pixelCount;
-          const avgB = totalB / pixelCount;
-          const avgBrightness = brightness / pixelCount;
-
-          // Edge detection (simplified Sobel)
-          for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
-              const idx = (y * width + x) * 4;
-              const current = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-              const right = (data[idx + 4] + data[idx + 5] + data[idx + 6]) / 3;
-              const bottom =
-                (data[idx + width * 4] +
-                  data[idx + width * 4 + 1] +
-                  data[idx + width * 4 + 2]) /
-                3;
-
-              const gx = Math.abs(right - current);
-              const gy = Math.abs(bottom - current);
-              edges += Math.sqrt(gx * gx + gy * gy);
-            }
-          }
-
-          // Color variance
-          for (let i = 0; i < data.length; i += 4) {
-            const r = data[i] - avgR;
-            const g = data[i + 1] - avgG;
-            const b = data[i + 2] - avgB;
-            colorVariance += r * r + g * g + b * b;
-          }
-
-          colorVariance = Math.sqrt(colorVariance / pixelCount);
-
-          return {
-            avgR,
-            avgG,
-            avgB,
-            avgBrightness,
-            edges: edges / pixelCount,
-            colorVariance,
-            isColorful: colorVariance > 50,
-            isDark: avgBrightness < 100,
-            isBright: avgBrightness > 180,
-            hasHighContrast: edges > 20,
-            dominantColor: this.getDominantColor(avgR, avgG, avgB),
+        getClassName(classIndex) {
+          // Simplified mapping of some common ImageNet classes
+          const classNames = {
+            151: "Chihuahua",
+            281: "Tabby Cat",
+            285: "Egyptian Cat",
+            282: "Tiger Cat",
+            463: "Basketball",
+            924: "Guacamole",
+            762: "Restaurant",
+            504: "Coffee Mug",
+            441: "Beer Glass",
+            571: "Frying Pan",
+            859: "Toothbrush",
+            665: "Mortar",
+            640: "Laptop",
+            487: "Cellular Phone",
+            722: "Ping Pong Ball",
+            // Add more mappings as needed
           };
-        }
 
-        getDominantColor(r, g, b) {
-          const max = Math.max(r, g, b);
-          if (max === r && r > g + 20 && r > b + 20) return "red";
-          if (max === g && g > r + 20 && g > b + 20) return "green";
-          if (max === b && b > r + 20 && b > g + 20) return "blue";
-          if (r > 200 && g > 200 && b > 200) return "white";
-          if (r < 50 && g < 50 && b < 50) return "black";
-          if (Math.abs(r - g) < 30 && Math.abs(g - b) < 30) return "gray";
-          return "mixed";
-        }
-
-        generatePredictions(features) {
-          const predictions = [];
-
-          // Analyze based on color characteristics
-          if (features.dominantColor === "green" && features.isColorful) {
-            predictions.push({
-              name: "Plant or Vegetation",
-              confidence: 0.85,
-              reason: "Strong green color presence",
-            });
-          }
-
-          if (
-            features.dominantColor === "blue" &&
-            features.avgBrightness > 150
-          ) {
-            predictions.push({
-              name: "Sky or Water",
-              confidence: 0.8,
-              reason: "Blue coloring with brightness",
-            });
-          }
-
-          if (features.dominantColor === "red" && features.isColorful) {
-            predictions.push({
-              name: "Food or Flower",
-              confidence: 0.75,
-              reason: "Rich red coloring",
-            });
-          }
-
-          // Analyze based on brightness and contrast
-          if (features.isBright && features.hasHighContrast) {
-            predictions.push({
-              name: "Text or Document",
-              confidence: 0.9,
-              reason: "High contrast with brightness",
-            });
-          }
-
-          if (features.isDark && !features.hasHighContrast) {
-            predictions.push({
-              name: "Dark Scene or Night Photo",
-              confidence: 0.85,
-              reason: "Low brightness, low contrast",
-            });
-          }
-
-          // Analyze based on texture and complexity
-          if (features.hasHighContrast && features.colorVariance > 60) {
-            predictions.push({
-              name: "Complex Scene or Crowd",
-              confidence: 0.7,
-              reason: "High detail and color variation",
-            });
-          }
-
-          if (!features.isColorful && features.hasHighContrast) {
-            predictions.push({
-              name: "Black & White Photo",
-              confidence: 0.88,
-              reason: "Low color variance, high contrast",
-            });
-          }
-
-          // Face/person detection based on skin tone approximation
-          if (
-            features.avgR > 180 &&
-            features.avgG > 140 &&
-            features.avgB > 120 &&
-            features.avgR > features.avgG &&
-            features.avgG > features.avgB
-          ) {
-            predictions.push({
-              name: "Person or Portrait",
-              confidence: 0.65,
-              reason: "Skin tone color distribution",
-            });
-          }
-
-          // Indoor/outdoor classification
-          if (features.avgBrightness > 160 && features.isColorful) {
-            predictions.push({
-              name: "Outdoor Scene",
-              confidence: 0.75,
-              reason: "Bright and colorful",
-            });
-          } else if (features.avgBrightness < 120) {
-            predictions.push({
-              name: "Indoor Scene",
-              confidence: 0.7,
-              reason: "Lower brightness levels",
-            });
-          }
-
-          // Object type predictions based on color combinations
-          if (
-            features.dominantColor === "gray" ||
-            features.dominantColor === "black"
-          ) {
-            predictions.push({
-              name: "Vehicle or Machine",
-              confidence: 0.6,
-              reason: "Metallic color characteristics",
-            });
-          }
-
-          if (features.dominantColor === "white" && features.hasHighContrast) {
-            predictions.push({
-              name: "Building or Architecture",
-              confidence: 0.65,
-              reason: "White with structural contrast",
-            });
-          }
-
-          // Sort by confidence and return top 5
-          predictions.sort((a, b) => b.confidence - a.confidence);
-          return predictions.slice(0, 5);
+          return classNames[classIndex] || `Class ${classIndex}`;
         }
 
         displayResults(predictions) {
           this.predictions.innerHTML = "";
 
-          if (predictions.length === 0) {
-            this.predictions.innerHTML = `
-                        <div class="prediction">
-                            <div>
-                                <div class="prediction-label">General Image</div>
-                                <div style="font-size: 0.8rem; color: #666; margin-top: 4px;">
-                                    Unable to determine specific content
-                                </div>
+          predictions.forEach((pred) => {
+            const confidence = (pred.probability * 100).toFixed(1);
+
+            const predictionElement = document.createElement("div");
+            predictionElement.className = "prediction";
+
+            predictionElement.innerHTML = `
+                        <div>
+                            <div class="prediction-label">${pred.className}</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" style="width: ${confidence}%"></div>
                             </div>
-                            <div class="prediction-confidence">50%</div>
                         </div>
+                        <div class="prediction-confidence">${confidence}%</div>
                     `;
-          } else {
-            predictions.forEach((pred) => {
-              const confidence = (pred.confidence * 100).toFixed(1);
 
-              const predictionElement = document.createElement("div");
-              predictionElement.className = "prediction";
-
-              predictionElement.innerHTML = `
-                            <div>
-                                <div class="prediction-label">${pred.name}</div>
-                                <div class="confidence-bar">
-                                    <div class="confidence-fill" style="width: ${confidence}%"></div>
-                                </div>
-                                <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">
-                                    ${pred.reason}
-                                </div>
-                            </div>
-                            <div class="prediction-confidence">${confidence}%</div>
-                        `;
-
-              this.predictions.appendChild(predictionElement);
-            });
-          }
+            this.predictions.appendChild(predictionElement);
+          });
 
           this.results.classList.remove("hidden");
         }
