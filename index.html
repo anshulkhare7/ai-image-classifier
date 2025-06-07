@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Image Classifier</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .container {
+        max-width: 100vw;
+        padding: 10px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .header {
+        text-align: center;
+        padding: 20px 0;
+        color: white;
+      }
+
+      .header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      .header p {
+        opacity: 0.9;
+        font-size: 0.9rem;
+      }
+
+      .main-content {
+        flex: 1;
+        background: white;
+        border-radius: 20px 20px 0 0;
+        padding: 25px 20px;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .camera-section {
+        margin-bottom: 25px;
+      }
+
+      .camera-container {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        border-radius: 15px;
+        overflow: hidden;
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+      }
+
+      #videoElement {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        display: none;
+      }
+
+      #imagePreview {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        display: none;
+      }
+
+      .placeholder {
+        height: 300px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .placeholder-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        min-width: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+
+      .btn-secondary {
+        background: #f8f9fa;
+        color: #495057;
+        border: 2px solid #dee2e6;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .status {
+        text-align: center;
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 10px;
+        font-weight: 500;
+      }
+
+      .status.loading {
+        background: #e3f2fd;
+        color: #1976d2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .status.success {
+        background: #e8f5e8;
+        color: #2e7d32;
+      }
+
+      .status.error {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #bbdefb;
+        border-top: 2px solid #1976d2;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .results {
+        margin-top: 25px;
+      }
+
+      .results h3 {
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 1.2rem;
+      }
+
+      .prediction {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+      }
+
+      .prediction-label {
+        font-weight: 500;
+        text-transform: capitalize;
+      }
+
+      .prediction-confidence {
+        font-weight: 600;
+        color: #667eea;
+        font-size: 0.9rem;
+      }
+
+      .confidence-bar {
+        width: 100%;
+        height: 4px;
+        background: #e9ecef;
+        border-radius: 2px;
+        margin-top: 8px;
+        overflow: hidden;
+      }
+
+      .confidence-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 2px;
+        transition: width 0.5s ease;
+      }
+
+      @media (max-width: 480px) {
+        .header h1 {
+          font-size: 1.5rem;
+        }
+
+        .controls {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .btn {
+          width: 100%;
+          max-width: 280px;
+        }
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .info-box {
+        background: #fff3cd;
+        color: #856404;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ffeaa7;
+      }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .feature-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+      }
+
+      .feature-list li:last-child {
+        border-bottom: none;
+      }
+
+      .feature-name {
+        font-weight: 600;
+        color: #667eea;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🤖 AI Image Classifier</h1>
+        <p>Analyze images using computer vision</p>
+      </div>
+
+      <div class="main-content">
+        <div class="info-box">
+          <strong>🔧 Offline Image Analysis</strong><br />
+          This app works completely offline using built-in computer vision
+          algorithms. No external dependencies required!
+        </div>
+
+        <div class="camera-section">
+          <div class="camera-container">
+            <video id="videoElement" autoplay playsinline></video>
+            <img id="imagePreview" alt="Preview" />
+            <div id="placeholder" class="placeholder">
+              <div class="placeholder-icon">📷</div>
+              <p>
+                Take a photo or select from gallery<br />to analyze the image
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button id="cameraBtn" class="btn btn-primary">📸 Camera</button>
+          <button id="galleryBtn" class="btn btn-secondary">🖼️ Gallery</button>
+          <button id="captureBtn" class="btn btn-primary hidden">
+            ✨ Analyze
+          </button>
+          <button id="stopBtn" class="btn btn-secondary hidden">❌ Stop</button>
+        </div>
+
+        <input type="file" id="fileInput" class="file-input" accept="image/*" />
+
+        <div id="status" class="status success">
+          ✅ Ready to analyze images! No internet connection required.
+        </div>
+
+        <div id="results" class="results hidden">
+          <h3>🔍 Image Analysis</h3>
+          <div id="predictions"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class ImageClassifier {
+        constructor() {
+          this.setupElements();
+          this.initializeAnalyzer();
+        }
+
+        setupElements() {
+          this.videoElement = document.getElementById("videoElement");
+          this.imagePreview = document.getElementById("imagePreview");
+          this.placeholder = document.getElementById("placeholder");
+          this.cameraBtn = document.getElementById("cameraBtn");
+          this.galleryBtn = document.getElementById("galleryBtn");
+          this.captureBtn = document.getElementById("captureBtn");
+          this.stopBtn = document.getElementById("stopBtn");
+          this.fileInput = document.getElementById("fileInput");
+          this.status = document.getElementById("status");
+          this.results = document.getElementById("results");
+          this.predictions = document.getElementById("predictions");
+
+          this.setupEventListeners();
+        }
+
+        setupEventListeners() {
+          this.cameraBtn.addEventListener("click", () => this.startCamera());
+          this.galleryBtn.addEventListener("click", () =>
+            this.fileInput.click()
+          );
+          this.captureBtn.addEventListener("click", () =>
+            this.captureAndAnalyze()
+          );
+          this.stopBtn.addEventListener("click", () => this.stopCamera());
+          this.fileInput.addEventListener("change", (e) =>
+            this.handleFileSelect(e)
+          );
+        }
+
+        initializeAnalyzer() {
+          // Hide status after 3 seconds since we're ready immediately
+          setTimeout(() => {
+            this.status.classList.add("hidden");
+          }, 3000);
+        }
+
+        updateStatus(message, type) {
+          this.status.className = `status ${type}`;
+          this.status.innerHTML =
+            type === "loading"
+              ? `<div class="spinner"></div>${message}`
+              : message;
+          this.status.classList.remove("hidden");
+        }
+
+        async startCamera() {
+          try {
+            this.updateStatus("Starting camera...", "loading");
+
+            const constraints = {
+              video: {
+                facingMode: "environment",
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              },
+            };
+
+            this.stream = await navigator.mediaDevices.getUserMedia(
+              constraints
+            );
+            this.videoElement.srcObject = this.stream;
+
+            this.showElement(this.videoElement);
+            this.hideElement(this.imagePreview);
+            this.hideElement(this.placeholder);
+
+            this.showCameraControls();
+            this.status.classList.add("hidden");
+          } catch (error) {
+            console.error("Error accessing camera:", error);
+            this.updateStatus(
+              "Unable to access camera. Please check permissions.",
+              "error"
+            );
+          }
+        }
+
+        stopCamera() {
+          if (this.stream) {
+            this.stream.getTracks().forEach((track) => track.stop());
+            this.stream = null;
+          }
+
+          this.hideElement(this.videoElement);
+          this.showElement(this.placeholder);
+          this.showDefaultControls();
+        }
+
+        async handleFileSelect(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.imagePreview.src = e.target.result;
+            this.showElement(this.imagePreview);
+            this.hideElement(this.videoElement);
+            this.hideElement(this.placeholder);
+
+            this.showImageControls();
+            this.analyzeImage(this.imagePreview);
+          };
+          reader.readAsDataURL(file);
+        }
+
+        async captureAndAnalyze() {
+          if (!this.videoElement.srcObject) return;
+
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+
+          canvas.width = this.videoElement.videoWidth;
+          canvas.height = this.videoElement.videoHeight;
+
+          context.drawImage(this.videoElement, 0, 0);
+
+          const imageData = canvas.toDataURL("image/jpeg");
+          this.imagePreview.src = imageData;
+
+          this.showElement(this.imagePreview);
+          this.hideElement(this.videoElement);
+          this.stopCamera();
+          this.showImageControls();
+
+          await this.analyzeImage(this.imagePreview);
+        }
+
+        async analyzeImage(imageElement) {
+          try {
+            this.updateStatus("Analyzing image features...", "loading");
+
+            // Create canvas for image analysis
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            // Set canvas size
+            canvas.width = 224;
+            canvas.height = 224;
+
+            // Draw and analyze image
+            ctx.drawImage(imageElement, 0, 0, 224, 224);
+            const imageData = ctx.getImageData(0, 0, 224, 224);
+
+            // Perform analysis
+            const analysis = this.performImageAnalysis(imageData);
+
+            this.displayResults(analysis);
+            this.status.classList.add("hidden");
+          } catch (error) {
+            console.error("Error analyzing image:", error);
+            this.updateStatus(
+              "Error analyzing image. Please try again.",
+              "error"
+            );
+          }
+        }
+
+        performImageAnalysis(imageData) {
+          const data = imageData.data;
+          const width = imageData.width;
+          const height = imageData.height;
+
+          // Extract features
+          const features = this.extractImageFeatures(data, width, height);
+
+          // Generate predictions based on features
+          return this.generatePredictions(features);
+        }
+
+        extractImageFeatures(data, width, height) {
+          let totalR = 0,
+            totalG = 0,
+            totalB = 0;
+          let brightness = 0;
+          let edges = 0;
+          let colorVariance = 0;
+          let textureComplexity = 0;
+
+          const pixelCount = width * height;
+
+          // Analyze color distribution and basic features
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            totalR += r;
+            totalG += g;
+            totalB += b;
+
+            brightness += (r + g + b) / 3;
+          }
+
+          // Calculate averages
+          const avgR = totalR / pixelCount;
+          const avgG = totalG / pixelCount;
+          const avgB = totalB / pixelCount;
+          const avgBrightness = brightness / pixelCount;
+
+          // Edge detection (simplified Sobel)
+          for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+              const idx = (y * width + x) * 4;
+              const current = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+              const right = (data[idx + 4] + data[idx + 5] + data[idx + 6]) / 3;
+              const bottom =
+                (data[idx + width * 4] +
+                  data[idx + width * 4 + 1] +
+                  data[idx + width * 4 + 2]) /
+                3;
+
+              const gx = Math.abs(right - current);
+              const gy = Math.abs(bottom - current);
+              edges += Math.sqrt(gx * gx + gy * gy);
+            }
+          }
+
+          // Color variance
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i] - avgR;
+            const g = data[i + 1] - avgG;
+            const b = data[i + 2] - avgB;
+            colorVariance += r * r + g * g + b * b;
+          }
+
+          colorVariance = Math.sqrt(colorVariance / pixelCount);
+
+          return {
+            avgR,
+            avgG,
+            avgB,
+            avgBrightness,
+            edges: edges / pixelCount,
+            colorVariance,
+            isColorful: colorVariance > 50,
+            isDark: avgBrightness < 100,
+            isBright: avgBrightness > 180,
+            hasHighContrast: edges > 20,
+            dominantColor: this.getDominantColor(avgR, avgG, avgB),
+          };
+        }
+
+        getDominantColor(r, g, b) {
+          const max = Math.max(r, g, b);
+          if (max === r && r > g + 20 && r > b + 20) return "red";
+          if (max === g && g > r + 20 && g > b + 20) return "green";
+          if (max === b && b > r + 20 && b > g + 20) return "blue";
+          if (r > 200 && g > 200 && b > 200) return "white";
+          if (r < 50 && g < 50 && b < 50) return "black";
+          if (Math.abs(r - g) < 30 && Math.abs(g - b) < 30) return "gray";
+          return "mixed";
+        }
+
+        generatePredictions(features) {
+          const predictions = [];
+
+          // Analyze based on color characteristics
+          if (features.dominantColor === "green" && features.isColorful) {
+            predictions.push({
+              name: "Plant or Vegetation",
+              confidence: 0.85,
+              reason: "Strong green color presence",
+            });
+          }
+
+          if (
+            features.dominantColor === "blue" &&
+            features.avgBrightness > 150
+          ) {
+            predictions.push({
+              name: "Sky or Water",
+              confidence: 0.8,
+              reason: "Blue coloring with brightness",
+            });
+          }
+
+          if (features.dominantColor === "red" && features.isColorful) {
+            predictions.push({
+              name: "Food or Flower",
+              confidence: 0.75,
+              reason: "Rich red coloring",
+            });
+          }
+
+          // Analyze based on brightness and contrast
+          if (features.isBright && features.hasHighContrast) {
+            predictions.push({
+              name: "Text or Document",
+              confidence: 0.9,
+              reason: "High contrast with brightness",
+            });
+          }
+
+          if (features.isDark && !features.hasHighContrast) {
+            predictions.push({
+              name: "Dark Scene or Night Photo",
+              confidence: 0.85,
+              reason: "Low brightness, low contrast",
+            });
+          }
+
+          // Analyze based on texture and complexity
+          if (features.hasHighContrast && features.colorVariance > 60) {
+            predictions.push({
+              name: "Complex Scene or Crowd",
+              confidence: 0.7,
+              reason: "High detail and color variation",
+            });
+          }
+
+          if (!features.isColorful && features.hasHighContrast) {
+            predictions.push({
+              name: "Black & White Photo",
+              confidence: 0.88,
+              reason: "Low color variance, high contrast",
+            });
+          }
+
+          // Face/person detection based on skin tone approximation
+          if (
+            features.avgR > 180 &&
+            features.avgG > 140 &&
+            features.avgB > 120 &&
+            features.avgR > features.avgG &&
+            features.avgG > features.avgB
+          ) {
+            predictions.push({
+              name: "Person or Portrait",
+              confidence: 0.65,
+              reason: "Skin tone color distribution",
+            });
+          }
+
+          // Indoor/outdoor classification
+          if (features.avgBrightness > 160 && features.isColorful) {
+            predictions.push({
+              name: "Outdoor Scene",
+              confidence: 0.75,
+              reason: "Bright and colorful",
+            });
+          } else if (features.avgBrightness < 120) {
+            predictions.push({
+              name: "Indoor Scene",
+              confidence: 0.7,
+              reason: "Lower brightness levels",
+            });
+          }
+
+          // Object type predictions based on color combinations
+          if (
+            features.dominantColor === "gray" ||
+            features.dominantColor === "black"
+          ) {
+            predictions.push({
+              name: "Vehicle or Machine",
+              confidence: 0.6,
+              reason: "Metallic color characteristics",
+            });
+          }
+
+          if (features.dominantColor === "white" && features.hasHighContrast) {
+            predictions.push({
+              name: "Building or Architecture",
+              confidence: 0.65,
+              reason: "White with structural contrast",
+            });
+          }
+
+          // Sort by confidence and return top 5
+          predictions.sort((a, b) => b.confidence - a.confidence);
+          return predictions.slice(0, 5);
+        }
+
+        displayResults(predictions) {
+          this.predictions.innerHTML = "";
+
+          if (predictions.length === 0) {
+            this.predictions.innerHTML = `
+                        <div class="prediction">
+                            <div>
+                                <div class="prediction-label">General Image</div>
+                                <div style="font-size: 0.8rem; color: #666; margin-top: 4px;">
+                                    Unable to determine specific content
+                                </div>
+                            </div>
+                            <div class="prediction-confidence">50%</div>
+                        </div>
+                    `;
+          } else {
+            predictions.forEach((pred) => {
+              const confidence = (pred.confidence * 100).toFixed(1);
+
+              const predictionElement = document.createElement("div");
+              predictionElement.className = "prediction";
+
+              predictionElement.innerHTML = `
+                            <div>
+                                <div class="prediction-label">${pred.name}</div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: ${confidence}%"></div>
+                                </div>
+                                <div style="font-size: 0.75rem; color: #666; margin-top: 4px;">
+                                    ${pred.reason}
+                                </div>
+                            </div>
+                            <div class="prediction-confidence">${confidence}%</div>
+                        `;
+
+              this.predictions.appendChild(predictionElement);
+            });
+          }
+
+          this.results.classList.remove("hidden");
+        }
+
+        showElement(element) {
+          element.classList.remove("hidden");
+          element.style.display = "block";
+        }
+
+        hideElement(element) {
+          element.classList.add("hidden");
+          element.style.display = "none";
+        }
+
+        showCameraControls() {
+          this.showElement(this.captureBtn);
+          this.showElement(this.stopBtn);
+          this.hideElement(this.cameraBtn);
+          this.hideElement(this.galleryBtn);
+        }
+
+        showImageControls() {
+          this.showDefaultControls();
+        }
+
+        showDefaultControls() {
+          this.showElement(this.cameraBtn);
+          this.showElement(this.galleryBtn);
+          this.hideElement(this.captureBtn);
+          this.hideElement(this.stopBtn);
+        }
+      }
+
+      // Initialize the app when DOM is loaded
+      document.addEventListener("DOMContentLoaded", () => {
+        new ImageClassifier();
+      });
+    </script>
+  </body>
+</html>
