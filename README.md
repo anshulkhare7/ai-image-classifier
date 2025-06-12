@@ -2,6 +2,11 @@
 
 Smart AI Vision is a web-based application that uses artificial intelligence to perform object and face detection. It can analyze images from a live camera feed or from an uploaded file.
 
+## Live Demo
+
+You can try out a live version of Smart AI Vision here:
+[https://anshulkhare7.github.io/ai-image-classifier/](https://anshulkhare7.github.io/ai-image-classifier/)
+
 ## Features
 
 - **Real-time Object and Face Detection:** Utilizes your device's camera to detect objects and faces in real-time.
