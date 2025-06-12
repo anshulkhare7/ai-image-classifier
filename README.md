@@ -51,28 +51,6 @@ Smart AI Vision is a web-based application that uses artificial intelligence to 
     *   If an image is displayed (either from camera capture or gallery upload), the "🗑️ Clear" button will be visible.
     *   Clicking "🗑️ Clear" will remove the current image from the preview, clear any displayed analysis results, and reset the view to the initial placeholder.
 
-## Screenshots
-
-Below are some screenshots to illustrate the application's user interface.
-
-*   **Initial View:** Shows the application after the AI models have loaded, before any action is taken.
-    *   *(Please add `initial_view.png` to the `screenshots` directory)*
-    ![Initial View](screenshots/initial_view.png)
-
-*   **Camera View:** Shows the live camera feed active after clicking the "Camera" button.
-    *   *(Please add `camera_view.png` to the `screenshots` directory)*
-    ![Camera View](screenshots/camera_view.png)
-
-*   **Image Preview:** Shows an image selected from the gallery, ready for analysis or after analysis.
-    *   *(Please add `image_preview.png` to the `screenshots` directory)*
-    ![Image Preview](screenshots/image_preview.png)
-
-*   **Results View:** Shows the detected objects/faces and their confidence scores after analysis.
-    *   *(Please add `results_view.png` to the `screenshots` directory)*
-    ![Results View](screenshots/results_view.png)
-
-**Note:** You will need to capture these screenshots manually using your browser and place them in the `screenshots` directory with the specified filenames.
-
 ## Version
 
 Current version: **0.0.1**
