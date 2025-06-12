@@ -55,6 +55,10 @@ You can try out a live version of Smart AI Vision [here](https://anshulkhare7.gi
     *   If an image is displayed (either from camera capture or gallery upload), the "🗑️ Clear" button will be visible.
     *   Clicking "🗑️ Clear" will remove the current image from the preview, clear any displayed analysis results, and reset the view to the initial placeholder.
 
+## Disclaimer
+
+This application was developed with AI assistance. The core application logic and features were built with the help of Claude (Anthropic). The documentation, including this README file, was generated with the assistance of Jules (Google).
+
 ## Version
 
 Current version: **0.0.1**
