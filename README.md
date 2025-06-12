@@ -4,8 +4,7 @@ Smart AI Vision is a web-based application that uses artificial intelligence to 
 
 ## Live Demo
 
-You can try out a live version of Smart AI Vision here:
-[https://anshulkhare7.github.io/ai-image-classifier/](https://anshulkhare7.github.io/ai-image-classifier/)
+You can try out a live version of Smart AI Vision [here](https://anshulkhare7.github.io/ai-image-classifier/).
 
 ## Features
 
