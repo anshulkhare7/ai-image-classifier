@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smart-ai-vision-cache-v1';
+const CACHE_NAME = 'smart-ai-vision-cache-ganga';
 const ASSETS_TO_CACHE = [
   './', // Alias for index.html
   './index.html'
