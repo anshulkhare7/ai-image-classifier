@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Smart AI Vision</title>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
       * {
         margin: 0;
@@ -347,16 +348,8 @@
     <script>
       class SmartImageClassifier {
         constructor() {
-          this.models = {
-            mobilenet: null,
-            cocossd: null,
-            facemesh: null,
-          };
-          this.modelsLoaded = {
-            mobilenet: false,
-            cocossd: false,
-            facemesh: false,
-          };
+          this.model = null;
+          this.modelLoaded = false;
           this.stream = null;
           this.setupElements();
           this.initializeModels();
@@ -399,50 +392,38 @@
             // Ensure buttons start disabled
             this.disableControls();
 
-            this.updateStatus("Loading object detection model...", "loading");
+            this.updateStatus("Loading Teachable Machine model...", "loading");
 
-            // Load COCO-SSD for better object detection
-            await this.loadScript(
-              "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js"
-            );
-            this.models.cocossd = await window.cocoSsd.load();
-            this.modelsLoaded.cocossd = true;
+            const URL = "https://teachablemachine.withgoogle.com/models/KNWYtL46s/";
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
 
-            this.updateStatus("Loading face detection model...", "loading");
-
-            // Load FaceMesh for face detection
-            await this.loadScript(
-              "https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@0.0.3/dist/face-landmarks-detection.min.js"
-            );
-            this.models.facemesh = await window.faceLandmarksDetection.load(
-              window.faceLandmarksDetection.SupportedPackages.mediapipeFacemesh
-            );
-            this.modelsLoaded.facemesh = true;
-
-            this.updateStatus("Loading classification model...", "loading");
-
-            // Load MobileNet as backup for general classification
-            await this.loadScript(
-              "https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"
-            );
-            this.models.mobilenet = await window.mobilenet.load();
-            this.modelsLoaded.mobilenet = true;
-
-            this.updateStatus(
-              "✅ All AI models loaded! Ready to analyze images.",
-              "success"
-            );
-
-            // Enable buttons once models are loaded
-            this.enableControls();
+            try {
+              this.model = await tmImage.load(modelURL, metadataURL);
+              this.modelLoaded = true;
+              this.updateStatus(
+                "✅ Teachable Machine model loaded! Ready to analyze images.",
+                "success"
+              );
+              this.enableControls();
+            } catch (error) {
+              console.error("Error loading Teachable Machine model:", error);
+              this.updateStatus(
+                "❌ Failed to load Teachable Machine model. Please check the console for errors and refresh.",
+                "error"
+              );
+            }
 
             setTimeout(() => {
-              this.status.classList.add("hidden");
+              if (this.modelLoaded) { // Only hide if successfully loaded
+                this.status.classList.add("hidden");
+              }
             }, 3000);
           } catch (error) {
-            console.error("Error loading models:", error);
+            // This outer catch is for errors not related to model loading itself
+            console.error("Error in initializeModels:", error);
             this.updateStatus(
-              "❌ Failed to load AI models. Please refresh the page.",
+              "❌ An unexpected error occurred. Please refresh the page.",
               "error"
             );
           }
@@ -585,12 +566,9 @@
         }
 
         async analyzeImage(imageElement) {
-          const allModelsLoaded = Object.values(this.modelsLoaded).every(
-            (loaded) => loaded
-          );
-          if (!allModelsLoaded) {
+          if (!this.modelLoaded || !this.model) {
             this.updateStatus(
-              "AI models not loaded yet. Please wait...",
+              "Custom AI model not loaded yet. Please wait or refresh.",
               "error"
             );
             return;
@@ -601,265 +579,35 @@
             this.clearResults();
 
             this.updateStatus(
-              "🔍 Analyzing image with multiple AI models...",
+              "🔍 Analyzing image with custom AI model...",
               "loading"
             );
 
             // Add small delay to ensure image is fully loaded
             await new Promise((resolve) => setTimeout(resolve, 100));
 
+            const predictions = await this.model.predict(imageElement);
             const results = [];
 
-            // 1. Check for faces first
-            try {
-              const faces = await this.models.facemesh.estimateFaces({
-                input: imageElement,
-                returnTensors: false,
-                flipHorizontal: false,
-                predictIrises: false,
+            predictions.forEach(prediction => {
+              results.push({
+                type: "custom",
+                object: prediction.className,
+                confidence: Math.round(prediction.probability * 100),
+                icon: "🤖",
+                info: "Custom model prediction"
               });
-
-              if (faces && faces.length > 0) {
-                results.push({
-                  type: "face",
-                  object:
-                    faces.length === 1
-                      ? "Human Face"
-                      : `${faces.length} Human Faces`,
-                  confidence: 95,
-                  icon: "👤",
-                  info:
-                    faces.length === 1
-                      ? "Detected a person in the image"
-                      : `Detected ${faces.length} people in the image`,
-                });
-              }
-            } catch (faceError) {
-              console.log("Face detection failed:", faceError);
-            }
-
-            // 2. Object detection with COCO-SSD
-            try {
-              const objects = await this.models.cocossd.detect(imageElement);
-
-              if (objects && objects.length > 0) {
-                // Get the most confident detection
-                const bestObject = objects.reduce((best, obj) =>
-                  obj.score > best.score ? obj : best
-                );
-
-                const cleanName = this.cleanObjectName(bestObject.class);
-                const confidence = Math.round(bestObject.score * 100);
-
-                if (confidence > 30) {
-                  // Only show if reasonably confident
-                  results.push({
-                    type: "object",
-                    object: cleanName,
-                    confidence: confidence,
-                    icon: this.getObjectIcon(bestObject.class),
-                    info:
-                      objects.length > 1
-                        ? `Also found: ${objects
-                            .slice(1, 3)
-                            .map((o) => this.cleanObjectName(o.class))
-                            .join(", ")}`
-                        : "",
-                  });
-                }
-              }
-            } catch (objectError) {
-              console.log("Object detection failed:", objectError);
-            }
-
-            // 3. Fallback to MobileNet if no good detections
-            if (results.length === 0) {
-              try {
-                const classifications = await this.models.mobilenet.classify(
-                  imageElement
-                );
-                const topClass = classifications[0];
-                const cleanName = this.cleanClassName(topClass.className);
-                const confidence = Math.round(topClass.probability * 100);
-
-                results.push({
-                  type: "general",
-                  object: cleanName,
-                  confidence: confidence,
-                  icon: "🔍",
-                  info: "General classification result",
-                });
-              } catch (classifyError) {
-                console.log("Classification failed:", classifyError);
-                results.push({
-                  type: "error",
-                  object: "Unable to identify",
-                  confidence: 0,
-                  icon: "❓",
-                  info: "Could not analyze this image",
-                });
-              }
-            }
+            });
 
             this.displaySmartResults(results);
             this.status.classList.add("hidden");
           } catch (error) {
-            console.error("Error analyzing image:", error);
+            console.error("Error analyzing image with custom model:", error);
             this.updateStatus(
               "Error analyzing image. Please try again.",
               "error"
             );
           }
-        }
-
-        cleanObjectName(className) {
-          const replacements = {
-            person: "Person",
-            bicycle: "Bicycle",
-            car: "Car",
-            motorcycle: "Motorcycle",
-            airplane: "Airplane",
-            bus: "Bus",
-            train: "Train",
-            truck: "Truck",
-            boat: "Boat",
-            "traffic light": "Traffic Light",
-            "fire hydrant": "Fire Hydrant",
-            "stop sign": "Stop Sign",
-            "parking meter": "Parking Meter",
-            bench: "Bench",
-            bird: "Bird",
-            cat: "Cat",
-            dog: "Dog",
-            horse: "Horse",
-            sheep: "Sheep",
-            cow: "Cow",
-            elephant: "Elephant",
-            bear: "Bear",
-            zebra: "Zebra",
-            giraffe: "Giraffe",
-            backpack: "Backpack",
-            umbrella: "Umbrella",
-            handbag: "Handbag",
-            tie: "Tie",
-            suitcase: "Suitcase",
-            frisbee: "Frisbee",
-            skis: "Skis",
-            snowboard: "Snowboard",
-            "sports ball": "Ball",
-            kite: "Kite",
-            "baseball bat": "Baseball Bat",
-            "baseball glove": "Baseball Glove",
-            skateboard: "Skateboard",
-            surfboard: "Surfboard",
-            "tennis racket": "Tennis Racket",
-            bottle: "Bottle",
-            "wine glass": "Wine Glass",
-            cup: "Cup",
-            fork: "Fork",
-            knife: "Knife",
-            spoon: "Spoon",
-            bowl: "Bowl",
-            banana: "Banana",
-            apple: "Apple",
-            sandwich: "Sandwich",
-            orange: "Orange",
-            broccoli: "Broccoli",
-            carrot: "Carrot",
-            "hot dog": "Hot Dog",
-            pizza: "Pizza",
-            donut: "Donut",
-            cake: "Cake",
-            chair: "Chair",
-            couch: "Couch",
-            "potted plant": "Plant",
-            bed: "Bed",
-            "dining table": "Table",
-            toilet: "Toilet",
-            tv: "TV",
-            laptop: "Laptop",
-            mouse: "Computer Mouse",
-            remote: "Remote Control",
-            keyboard: "Keyboard",
-            "cell phone": "Phone",
-            microwave: "Microwave",
-            oven: "Oven",
-            toaster: "Toaster",
-            sink: "Sink",
-            refrigerator: "Refrigerator",
-            book: "Book",
-            clock: "Clock",
-            vase: "Vase",
-            scissors: "Scissors",
-            "teddy bear": "Teddy Bear",
-            "hair drier": "Hair Dryer",
-            toothbrush: "Toothbrush",
-          };
-
-          return replacements[className.toLowerCase()] || className;
-        }
-
-        getObjectIcon(className) {
-          const icons = {
-            person: "👤",
-            cat: "🐱",
-            dog: "🐶",
-            bird: "🐦",
-            car: "🚗",
-            bicycle: "🚲",
-            motorcycle: "🏍️",
-            airplane: "✈️",
-            bus: "🚌",
-            train: "🚂",
-            truck: "🚛",
-            boat: "🚤",
-            bottle: "🍼",
-            cup: "☕",
-            "wine glass": "🍷",
-            apple: "🍎",
-            banana: "🍌",
-            orange: "🍊",
-            pizza: "🍕",
-            cake: "🎂",
-            chair: "🪑",
-            couch: "🛋️",
-            bed: "🛏️",
-            tv: "📺",
-            laptop: "💻",
-            phone: "📱",
-            "cell phone": "📱",
-            book: "📖",
-            clock: "🕐",
-            umbrella: "☂️",
-            backpack: "🎒",
-            handbag: "👜",
-            "sports ball": "⚽",
-            frisbee: "🥏",
-            skateboard: "🛹",
-          };
-
-          return icons[className.toLowerCase()] || "📦";
-        }
-
-        cleanClassName(className) {
-          let cleaned = className
-            .split(",")[0]
-            .replace(/^\d+\s*/, "")
-            .replace(/[_-]/g, " ")
-            .toLowerCase()
-            .split(" ")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
-
-          const replacements = {
-            "Egyptian Cat": "Cat",
-            "Tabby Cat": "Cat",
-            "Tiger Cat": "Cat",
-            "Persian Cat": "Cat",
-            "Siamese Cat": "Cat",
-          };
-
-          return replacements[cleaned] || cleaned;
         }
 
         displaySmartResults(results) {
