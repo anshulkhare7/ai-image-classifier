@@ -11,7 +11,7 @@ You can try out a live version of Smart AI Vision [here](https://anshulkhare7.gi
 🎯 **Custom Celebrity Recognition Model**
 
 - **Platform**: Trained on [Teachable Machine by Google](https://teachablemachine.withgoogle.com/)
-- **Model URL**: https://teachablemachine.withgoogle.com/models/KNWYtL46s/
+- **Model URL**: https://teachablemachine.withgoogle.com/models/-fCow7Sym/
 - **Training Data**: 30 images per class (90 total images)
 - **Classes**:
   - **Donald Trump** - Former US President
@@ -102,7 +102,8 @@ Simply open the index.html file in browser.
 
 ## Version History
 
-- **v2.0.0 - Yamuna** (Current) - Custom Teachable Machine celebrity recognition model
+- **v2.0.1 - Betwa** (Current) - Updated custom Teachable Machine celebrity recognition model
+- **v2.0.0 - Yamuna** - Custom Teachable Machine celebrity recognition model
 - **v1.0.0 - Ganga** - Initial PWA release with multiple AI models (COCO-SSD, FaceMesh, MobileNet)
 
 ## Release Naming
@@ -110,6 +111,7 @@ Simply open the index.html file in browser.
 This project follows an **Indian river naming convention** for releases, starting with sacred rivers:
 
 - v1.0.0 - **Ganga** (The most sacred river)
+- v2.0.1 - **Betwa** (Sacred tributary)
 - v2.0.0 - **Yamuna** (Sacred tributary of Ganga)
 - Future: Saraswati, Narmada, Godavari, Kaveri...
 
@@ -167,4 +169,4 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-**Current Version**: v2.0.0 - Yamuna | **Model**: Celebrity Face Recognition | **Classes**: Donald Trump, Tom Cruise, Bill Gates
+**Current Version**: v2.0.1 - Betwa | **Model**: Celebrity Face Recognition | **Classes**: Donald Trump, Tom Cruise, Bill Gates

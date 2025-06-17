@@ -70,4 +70,4 @@ Test the application functionality:
 
 ## Current Version
 
-The app displays version 0.0.2 in the UI footer. Update both the display version in `index.html:348` and the service worker cache name in `sw.js:1` when deploying changes.
+The app displays version 2.0.1 - Betwa in the UI footer. Update both the display version in `index.html:347` and the service worker cache name in `sw.js:1` when deploying changes.

@@ -44,7 +44,7 @@ This file contains a curated list of Indian river names for use as release candi
 - **Bhagirathi** - Another source of Ganga
 - **Ramganga** - Tributary of Ganga
 - **Gomti** - River of Lucknow
-- **Betwa** - River of Bundelkhand
+- **Betwa** - River of Bundelkhand ✓ (v2.0.1)
 - **Chambal** - River of ravines
 - **Kali** - Border river with Nepal
 - **Ghaghra** - Major tributary of Ganga
@@ -62,5 +62,7 @@ This file contains a curated list of Indian river names for use as release candi
 
 ## Current Release Naming
 
-- Version 0.0.2 - Current version (pre-river naming)
-- Next suggested: **Ganga** (for v1.0.0)
+- v2.0.1 - **Betwa** (Current) - Model update release
+- v2.0.0 - **Yamuna** - Custom celebrity recognition model
+- v1.0.0 - **Ganga** - Initial river naming with PWA features
+- v0.0.2 - Pre-river naming era
