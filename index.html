@@ -392,7 +392,7 @@
             // Ensure buttons start disabled
             this.disableControls();
 
-            this.updateStatus("Loading Teachable Machine model...", "loading");
+            this.updateStatus("Loading custom AI model...", "loading");
 
             const URL = "https://teachablemachine.withgoogle.com/models/KNWYtL46s/";
             const modelURL = URL + "model.json";
@@ -402,14 +402,14 @@
               this.model = await tmImage.load(modelURL, metadataURL);
               this.modelLoaded = true;
               this.updateStatus(
-                "✅ Teachable Machine model loaded! Ready to analyze images.",
+                "✅ Custom AI model loaded! Ready to analyze images.",
                 "success"
               );
               this.enableControls();
             } catch (error) {
-              console.error("Error loading Teachable Machine model:", error);
+              console.error("Error loading custom Teachable Machine model:", error);
               this.updateStatus(
-                "❌ Failed to load Teachable Machine model. Please check the console for errors and refresh.",
+                "❌ Failed to load custom AI model. Please check the console for errors and refresh.",
                 "error"
               );
             }
@@ -423,21 +423,22 @@
             // This outer catch is for errors not related to model loading itself
             console.error("Error in initializeModels:", error);
             this.updateStatus(
-              "❌ An unexpected error occurred. Please refresh the page.",
+              "❌ An unexpected error occurred during model initialization. Please refresh the page.",
               "error"
             );
           }
         }
 
-        async loadScript(src) {
-          return new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-        }
+        // loadScript function is no longer needed as all scripts are in head
+        // async loadScript(src) {
+        //   return new Promise((resolve, reject) => {
+        //     const script = document.createElement("script");
+        //     script.src = src;
+        //     script.onload = resolve;
+        //     script.onerror = reject;
+        //     document.head.appendChild(script);
+        //   });
+        // }
 
         updateStatus(message, type) {
           this.status.className = `status ${type}`;
@@ -567,10 +568,7 @@
 
         async analyzeImage(imageElement) {
           if (!this.modelLoaded || !this.model) {
-            this.updateStatus(
-              "Custom AI model not loaded yet. Please wait or refresh.",
-              "error"
-            );
+            this.updateStatus("Custom AI model not loaded yet. Please wait...", "error");
             return;
           }
 
@@ -578,33 +576,26 @@
             // Clear any previous results
             this.clearResults();
 
-            this.updateStatus(
-              "🔍 Analyzing image with custom AI model...",
-              "loading"
-            );
-
-            // Add small delay to ensure image is fully loaded
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            this.updateStatus("🔍 Analyzing image with custom AI model...", "loading");
+            await new Promise(resolve => setTimeout(resolve, 100)); // Keep or adjust delay as needed
 
             const predictions = await this.model.predict(imageElement);
             const results = [];
-
-            predictions.forEach(prediction => {
+            for (let pred of predictions) {
               results.push({
                 type: "custom",
-                object: prediction.className,
-                confidence: Math.round(prediction.probability * 100),
-                icon: "🤖",
+                object: pred.className,
+                confidence: Math.round(pred.probability * 100),
+                icon: "🤖", // Generic icon
                 info: "Custom model prediction"
               });
-            });
-
+            }
             this.displaySmartResults(results);
             this.status.classList.add("hidden");
           } catch (error) {
             console.error("Error analyzing image with custom model:", error);
             this.updateStatus(
-              "Error analyzing image. Please try again.",
+              "Error during custom model analysis. Please try again.",
               "error"
             );
           }
