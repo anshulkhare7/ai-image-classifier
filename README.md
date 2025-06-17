@@ -1,64 +1,170 @@
 # Smart AI Vision
 
-Smart AI Vision is a web-based application that uses artificial intelligence to perform object and face detection. It can analyze images from a live camera feed or from an uploaded file.
+Smart AI Vision is a Progressive Web App (PWA) that performs **celebrity face recognition** using a custom-trained AI model. The application can analyze images from a live camera feed or uploaded files to identify faces of specific celebrities.
 
 ## Live Demo
 
 You can try out a live version of Smart AI Vision [here](https://anshulkhare7.github.io/ai-image-classifier/).
 
+## Current AI Model
+
+🎯 **Custom Celebrity Recognition Model**
+
+- **Platform**: Trained on [Teachable Machine by Google](https://teachablemachine.withgoogle.com/)
+- **Model URL**: https://teachablemachine.withgoogle.com/models/KNWYtL46s/
+- **Training Data**: 30 images per class (90 total images)
+- **Classes**:
+  - **Donald Trump** - Former US President
+  - **Tom Cruise** - Hollywood Actor
+  - **Bill Gates** - Microsoft Co-founder & Philanthropist
+
 ## Features
 
-- **Real-time Object and Face Detection:** Utilizes your device's camera to detect objects and faces in real-time.
-- **Image Upload Analysis:** Allows you to upload image files (JPEG, PNG, etc.) for object and face detection.
-- **AI-Powered:** Leverages TensorFlow.js to run multiple pre-trained machine learning models directly in your browser:
-    - **COCO-SSD:** For detecting a wide variety of common objects.
-    - **FaceMesh:** For detailed face detection and landmark tracking.
-    - **MobileNet:** As a fallback for general image classification.
-- **Confidence Scores:** Displays the detected objects or faces along with a confidence score for each prediction.
-- **User-Friendly Interface:** Simple and intuitive controls for starting the camera, uploading images, and viewing results.
-- **Client-Side Processing:** All image processing and AI analysis happen directly in your web browser, ensuring privacy as your images are not uploaded to a server.
+- **🎭 Celebrity Face Recognition**: Custom AI model trained to identify specific celebrity faces
+- **📸 Real-time Camera Analysis**: Use your device's camera to capture and analyze images instantly
+- **🖼️ Image Upload Support**: Upload photos from your gallery for analysis
+- **📱 Progressive Web App**:
+  - Install directly from your browser
+  - Works offline after initial load
+  - Native app-like experience on mobile and desktop
+- **🔒 Privacy-First**: All AI processing happens locally in your browser - no images uploaded to servers
+- **📊 Confidence Scores**: Each prediction includes a confidence percentage
+- **⚡ Real-time Processing**: Powered by TensorFlow.js for fast, client-side inference
+- **🎨 Responsive Design**: Optimized for all screen sizes and devices
+
+## Technical Stack
+
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **AI Framework**: TensorFlow.js
+- **Model**: Custom Teachable Machine image classification model
+- **PWA**: Service Worker for offline functionality and caching
+- **Deployment**: GitHub Pages
 
 ## How to Use
 
-1.  **Initial State:**
-    *   When you first open the application, it will begin loading the necessary AI models. During this time, the "Camera" and "Gallery" buttons will be disabled.
-    *   A status message "Loading AI models... Please wait" will be displayed.
-    *   Once the models are loaded, a success message "✅ All AI models loaded! Ready to analyze images." will appear, and the "Camera" and "Gallery" buttons will become active.
+### 1. Initial Loading
 
-2.  **Using the Camera:**
-    *   Click the "📸 Camera" button.
-    *   Your browser will likely ask for permission to access your camera. Grant the permission.
-    *   Your camera feed will appear in the preview area.
-    *   The controls will change to "✨ Analyze" and "❌ Stop".
-    *   Point your camera at the objects or faces you want to detect.
-    *   Click the "✨ Analyze" button. This will capture a still photo from the camera feed.
-    *   The application will then analyze this photo, and the results will be displayed below.
-    *   After analysis, or if you want to stop the camera feed, click the "❌ Stop" button. This will deactivate the camera and show the initial "Camera" and "Gallery" buttons. You can also click "🗑️ Clear" to remove the current image and results.
+- Open the application and wait for the custom AI model to load
+- Status message will show "Loading custom AI model... Please wait"
+- Once loaded: "✅ Custom AI model loaded! Ready to analyze images."
+- Camera and Gallery buttons will become active
 
-3.  **Uploading an Image from Gallery:**
-    *   Click the "🖼️ Gallery" button.
-    *   Your device's file selector will open. Choose an image file (e.g., JPEG, PNG).
-    *   The selected image will be displayed in the preview area.
-    *   The application will automatically start analyzing the image.
-    *   The results will be displayed below.
-    *   After viewing the results, you can click "🗑️ Clear" to remove the image and results, or upload another image using the "🖼️ Gallery" button, or switch to the "📸 Camera".
+### 2. Camera Mode
 
-4.  **Viewing Results:**
-    *   Detected objects or faces will be shown in result cards under the "🔍 What I found:" section.
-    *   Each card displays:
-        *   An icon representing the object/face.
-        *   The name of the detected object (e.g., "Cat", "Human Face", "Laptop").
-        *   A confidence score (e.g., "92% confident").
-        *   Sometimes, additional information like other detected objects might be listed.
+- Click **📸 Camera** button
+- Grant camera permissions when prompted
+- Point camera at a person's face
+- Click **✨ Analyze** to capture and analyze the image
+- Results will show the detected celebrity with confidence score
+- Use **❌ Stop** to exit camera mode or **🗑️ Clear** to reset
 
-5.  **Clearing Results/Resetting:**
-    *   If an image is displayed (either from camera capture or gallery upload), the "🗑️ Clear" button will be visible.
-    *   Clicking "🗑️ Clear" will remove the current image from the preview, clear any displayed analysis results, and reset the view to the initial placeholder.
+### 3. Gallery Upload
 
-## Disclaimer
+- Click **🖼️ Gallery** button
+- Select an image file (JPEG, PNG, WebP supported)
+- Image will automatically be analyzed after loading
+- Results display immediately with celebrity identification
+- Use **🗑️ Clear** to reset and try another image
 
-This application was developed with AI assistance. The core application logic and features were built with the help of Claude (Anthropic). The documentation, including this README file, was generated with the assistance of Jules (Google).
+### 4. Understanding Results
 
-## Version
+Results display:
 
-Current version: **0.0.1**
+- **Celebrity Name**: Donald Trump, Tom Cruise, or Bill Gates
+- **Confidence Score**: Percentage indicating model certainty
+- **Alternative Predictions**: Other possibilities with lower confidence scores
+- **🎯 Icon**: Indicates custom model prediction
+
+## Development
+
+### Local Development
+
+```bash
+# Clone the repository
+git clone https://github.com/anshulkhare7/ai-image-classifier.git
+cd ai-image-classifier
+
+# Serve locally
+Simply open the index.html file in browser.
+```
+
+### Project Structure
+
+```
+├── index.html          # Complete application (HTML + CSS + JavaScript)
+├── manifest.json       # PWA configuration
+├── sw.js              # Service worker for offline functionality
+├── icons/             # PWA icons (192x192, 512x512)
+├── CHANGELOG.md       # Version history
+├── RELEASE_NAMES.md   # River-based release naming system
+└── README.md          # This file
+```
+
+## Version History
+
+- **v2.0.0 - Yamuna** (Current) - Custom Teachable Machine celebrity recognition model
+- **v1.0.0 - Ganga** - Initial PWA release with multiple AI models (COCO-SSD, FaceMesh, MobileNet)
+
+## Release Naming
+
+This project follows an **Indian river naming convention** for releases, starting with sacred rivers:
+
+- v1.0.0 - **Ganga** (The most sacred river)
+- v2.0.0 - **Yamuna** (Sacred tributary of Ganga)
+- Future: Saraswati, Narmada, Godavari, Kaveri...
+
+## Model Limitations
+
+⚠️ **Current Model Constraints**:
+
+- **Limited to 3 celebrities**: Only trained on Donald Trump, Tom Cruise, and Bill Gates
+- **Small dataset**: 30 images per class (90 total training images)
+- **Lighting conditions**: Performance may vary with different lighting
+- **Face angles**: Works best with frontal face views
+- **Image quality**: Higher resolution images generally yield better results
+
+## Future Enhancements
+
+- 🔄 Expand training dataset with more images
+- 👥 Add more classes
+- 🎯 Improve model accuracy with data augmentation
+- 📊 Add prediction confidence visualization
+- 🔄 Model versioning and easy switching between different trained models
+
+## Privacy & Data
+
+- ✅ **No data collection**: Images are processed entirely on your device
+- ✅ **No server uploads**: All AI inference happens in your browser
+- ✅ **No tracking**: No analytics or user behavior tracking
+- ✅ **Open source**: Complete transparency in code and functionality
+
+## Browser Compatibility
+
+- ✅ Chrome 88+ (recommended)
+- ✅ Firefox 85+
+- ✅ Safari 14+
+- ✅ Edge 88+
+- 📱 Mobile browsers with camera support
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## Acknowledgments
+
+- **AI Development**: Built with assistance from [Claude Code](https://claude.ai/code) by Anthropic
+- **Model Training**: [Teachable Machine by Google](https://teachablemachine.withgoogle.com/)
+- **AI Framework**: [TensorFlow.js](https://www.tensorflow.org/js)
+- **Icons**: Emoji icons for consistent cross-platform display
+
+---
+
+**Current Version**: v2.0.0 - Yamuna | **Model**: Celebrity Face Recognition | **Classes**: Donald Trump, Tom Cruise, Bill Gates
