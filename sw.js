@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smart-ai-vision-cache-yamuna';
+const CACHE_NAME = 'smart-ai-vision-cache-betwa';
 const ASSETS_TO_CACHE = [
   './', // Alias for index.html
   './index.html'
