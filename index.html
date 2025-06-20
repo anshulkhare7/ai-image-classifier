@@ -4,12 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Smart AI Vision</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#667eea">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="AI Vision">
-    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#667eea" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="AI Vision" />
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
     <style>
       * {
         margin: 0;
@@ -307,7 +310,8 @@
             <div id="placeholder" class="placeholder">
               <div class="placeholder-icon">📷</div>
               <p>
-                Take a photo or select from gallery<br />to analyze with custom AI
+                Take a photo or select from gallery<br />to analyze with custom
+                AI
               </p>
             </div>
           </div>
@@ -344,7 +348,7 @@
 
       <!-- VERSION INFO - Update this version number when deploying -->
       <div class="version-info">
-        <span>Smart AI Vision v2.0.1 - Betwa</span>
+        <span>Smart AI Vision v2.1.0 - Betwa</span>
       </div>
     </div>
 
@@ -400,9 +404,11 @@
             this.updateStatus("Loading custom AI model...", "loading");
 
             // Load custom Teachable Machine model
-            const modelURL = "https://teachablemachine.withgoogle.com/models/-fCow7Sym/model.json";
-            const metadataURL = "https://teachablemachine.withgoogle.com/models/-fCow7Sym/metadata.json";
-            
+            const modelURL =
+              "https://teachablemachine.withgoogle.com/models/-fCow7Sym/model.json";
+            const metadataURL =
+              "https://teachablemachine.withgoogle.com/models/-fCow7Sym/metadata.json";
+
             this.model = await tmImage.load(modelURL, metadataURL);
             this.modelLoaded = true;
 
@@ -588,31 +594,39 @@
             // Use custom Teachable Machine model for prediction
             try {
               const predictions = await this.model.predict(imageElement);
-              
+
               if (predictions && predictions.length > 0) {
                 // Sort by probability and get top predictions
-                const sortedPredictions = predictions.sort((a, b) => b.probability - a.probability);
-                
+                const sortedPredictions = predictions.sort(
+                  (a, b) => b.probability - a.probability
+                );
+
                 // Show top prediction with confidence > 10%
                 const topPrediction = sortedPredictions[0];
                 const confidence = Math.round(topPrediction.probability * 100);
-                
+
                 if (confidence > 10) {
                   results.push({
                     type: "custom",
                     object: topPrediction.className,
                     confidence: confidence,
                     icon: "🎯",
-                    info: sortedPredictions.length > 1 
-                      ? `Other possibilities: ${sortedPredictions
-                          .slice(1, 3)
-                          .map(p => `${p.className} (${Math.round(p.probability * 100)}%)`)
-                          .join(", ")}`
-                      : "Custom model prediction",
+                    info:
+                      sortedPredictions.length > 1
+                        ? `Other possibilities: ${sortedPredictions
+                            .slice(1, 3)
+                            .map(
+                              (p) =>
+                                `${p.className} (${Math.round(
+                                  p.probability * 100
+                                )}%)`
+                            )
+                            .join(", ")}`
+                        : "Custom model prediction",
                   });
                 }
               }
-              
+
               // If no confident predictions, show all results
               if (results.length === 0) {
                 const topPrediction = predictions[0];
@@ -624,7 +638,6 @@
                   info: "Low confidence prediction",
                 });
               }
-              
             } catch (error) {
               console.log("Custom model prediction failed:", error);
               results.push({
@@ -646,9 +659,6 @@
             );
           }
         }
-
-
-
 
         displaySmartResults(results) {
           this.predictions.innerHTML = "";
@@ -752,14 +762,18 @@
       });
     </script>
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-              console.log('Service Worker registered with scope:', registration.scope);
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("./sw.js")
+            .then((registration) => {
+              console.log(
+                "Service Worker registered with scope:",
+                registration.scope
+              );
             })
-            .catch(error => {
-              console.error('Service Worker registration failed:', error);
+            .catch((error) => {
+              console.error("Service Worker registration failed:", error);
             });
         });
       }

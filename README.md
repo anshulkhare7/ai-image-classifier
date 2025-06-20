@@ -98,7 +98,7 @@ Simply open the index.html file in browser.
 
 ## Version History
 
-- **v2.0.1 - Betwa** (Current) - Updated custom Teachable Machine recognition model
+- **v2.1.0 - Betwa** (Current) - Updated custom Teachable Machine recognition model
 - **v2.0.0 - Yamuna** - Custom Teachable Machine celebrity recognition model
 - **v1.0.0 - Ganga** - Initial PWA release with multiple AI models (COCO-SSD, FaceMesh, MobileNet)
 
@@ -107,7 +107,7 @@ Simply open the index.html file in browser.
 This project follows an **Indian river naming convention** for releases, starting with sacred rivers:
 
 - v1.0.0 - **Ganga** (The most sacred river)
-- v2.0.1 - **Betwa** (Sacred tributary)
+- v2.1.0 - **Betwa** (Sacred tributary)
 - v2.0.0 - **Yamuna** (Sacred tributary of Ganga)
 - Future: Saraswati, Narmada, Godavari, Kaveri...
 
@@ -165,4 +165,4 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-**Current Version**: v2.0.1 - Betwa | **Model**: Custome Image Recognition | **Classes**: 3 trained classes
+**Current Version**: v2.1.0 - Betwa | **Model**: Custome Image Recognition | **Classes**: 3 trained classes
