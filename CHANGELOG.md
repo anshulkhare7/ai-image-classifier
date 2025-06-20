@@ -5,24 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.1-betwa] - 2025-06-17
+## [2.1.0-betwa] - 2025-06-17
 
 ### Changed
 
 - **Model Update:**
+
   - Updated custom Teachable Machine model URL to `https://teachablemachine.withgoogle.com/models/-fCow7Sym/`
   - Improved model performance and accuracy
   - Updated service worker cache name to `smart-ai-vision-cache-betwa`
 
 - **Version Updates:**
-  - Updated application version display to "v2.0.1 - Betwa"
-  - Updated all documentation to reflect v2.0.1 release
+  - Updated application version display to "v2.1.0 - Betwa"
+  - Updated all documentation to reflect v2.1.0 release
 
 ## [2.0.0-yamuna] - 2025-06-17
 
 ### Added
 
 - **Custom Celebrity Recognition Model:**
+
   - Integrated custom Teachable Machine model for celebrity face recognition
   - Added support for 3 celebrity classes: Donald Trump, Tom Cruise, Bill Gates
   - Model trained on 30 images per class (90 total training images)
@@ -30,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added Teachable Machine library integration (`@teachablemachine/image@0.8`)
 
 - **Enhanced Documentation:**
+
   - Complete README.md rewrite focusing on celebrity recognition capabilities
   - Added detailed model specifications and training data information
   - Documented Indian river naming convention for releases
@@ -43,12 +46,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Model Architecture:**
+
   - Replaced multiple AI models (COCO-SSD, FaceMesh, MobileNet) with single custom model
   - Simplified model loading process from 3 models to 1 custom model
   - Updated prediction logic to handle custom model classes and confidence scores
   - Changed UI text from "object & face detection" to "custom AI model"
 
 - **Code Optimization:**
+
   - Removed 147 lines of obsolete helper functions (`cleanObjectName`, `getObjectIcon`, `cleanClassName`)
   - Streamlined model initialization and error handling
   - Fixed gallery image analysis bug in `analyzeImage()` function
@@ -63,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Legacy AI Models:**
   - Removed COCO-SSD object detection model and related code
-  - Removed FaceMesh face detection model and related code  
+  - Removed FaceMesh face detection model and related code
   - Removed MobileNet classification model and related code
   - Removed all associated helper functions and object/icon mappings
   - Removed complex multi-model prediction logic
